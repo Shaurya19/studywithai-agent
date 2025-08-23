@@ -14,25 +14,6 @@ The system consists of:
 2. **Flashcard Agent**: Specializes in creating flashcards for memorization and quick review
 3. **Quiz Agent**: Specializes in generating various types of quiz questions for assessment
 
-## Project Structure
-
-```
-14-studywithai-agent/
-├── README.md                       # This documentation
-├── api.py                         # FastAPI REST API
-├── api_requirements.txt           # API dependencies
-├── run_api.py                     # API launch script
-└── studywithai-agent/             # Agent package
-    ├── __init__.py                # Package initialization
-    ├── agent.py                   # Main StudyWithAI agent (root_agent)
-    └── sub_agents/                # Sub-agents folder
-        ├── __init__.py            # Sub-agents initialization
-        ├── flashcard_agent/       # Flashcard creation agent
-        │   └── agent.py
-        └── quiz_agent/            # Quiz generation agent
-            └── agent.py
-```
-
 ## Features
 
 ### Flashcard Agent
@@ -54,7 +35,6 @@ The system consists of:
   - Multiple choice questions
   - True/false questions
   - Short answer questions
-  - Fill-in-the-blank questions
 - Balances difficulty levels (easy, medium, hard)
 - Provides explanations for correct answers
 - Creates 8-15 questions per content piece
@@ -86,11 +66,11 @@ source ../.venv/bin/activate
    - Copy `.env.example` to `.env` if it exists
    - Add your Google API key: `GOOGLE_API_KEY=your_api_key_here`
 
-### Using the REST API
+### Local Development
 
 1. Install API dependencies:
 ```bash
-cd 14-studywithai-agent
+cd studywithai-agent
 pip install -r api_requirements.txt
 ```
 
@@ -119,53 +99,21 @@ Then select "studywithai_agent" from the dropdown menu in the web UI.
 
 ### REST API Endpoints
 
-#### POST /generate
-Generate study materials from text content.
-
-**Request Body:**
-```json
-{
-  "content": "Your educational text content here...",
-  "material_type": "both",  // "flashcards", "quiz", or "both"
-  "session_id": "optional-session-id"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Study materials generated successfully",
-  "session_id": "generated-session-id",
-  "flashcards": [
-    {
-      "number": 1,
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy..."
-    }
-  ],
-  "quiz_questions": [
-    {
-      "number": 1,
-      "type": "Multiple Choice",
-      "difficulty": "Medium",
-      "question": "Which organelle is responsible for photosynthesis?",
-      "options": ["Mitochondria", "Chloroplast", "Nucleus", "Ribosome"],
-      "answer": "B) Chloroplast",
-      "explanation": "Chloroplasts contain chlorophyll..."
-    }
-  ],
-  "raw_response": "Full agent response..."
-}
-```
-
-#### POST /generate-from-pdf
-Generate study materials from an uploaded PDF file.
+#### POST /generate-flashcards
+Generate flashcards from prompt and optional files.
 
 **Form Data:**
-- `file`: PDF file to upload
-- `material_type`: "flashcards", "quiz", or "both"
-- `session_id`: Optional session ID
+- `prompt`: The educational prompt or content to process
+- `num_flashcards`: Number of flashcards to generate (default: 10)
+- `files`: Optional PDF files to upload and process
+
+#### POST /generate-quiz
+Generate quiz from prompt and optional files.
+
+**Form Data:**
+- `prompt`: The educational prompt or content to process
+- `num_questions`: Number of quiz questions to generate (default: 5)
+- `files`: Optional PDF files to upload and process
 
 #### GET /health
 Health check endpoint.
@@ -178,64 +126,28 @@ API information and available endpoints.
 **Using curl:**
 ```bash
 # Generate flashcards from text
-curl -X POST "http://localhost:8000/generate" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "content": "Photosynthesis is the process by which plants convert light energy, carbon dioxide, and water into glucose and oxygen.",
-       "material_type": "flashcards"
-     }'
+curl -X POST "http://localhost:8000/generate-flashcards" \
+     -F "prompt=Photosynthesis is the process by which plants convert light energy, carbon dioxide, and water into glucose and oxygen." \
+     -F "num_flashcards=5"
 
 # Upload PDF and generate quiz
-curl -X POST "http://localhost:8000/generate-from-pdf" \
+curl -X POST "http://localhost:8000/generate-quiz" \
      -F "file=@educational-content.pdf" \
-     -F "material_type=quiz"
+     -F "num_questions=10"
 ```
 
 **Using Python requests:**
 ```python
 import requests
 
-# Generate study materials from text
-response = requests.post("http://localhost:8000/generate", json={
-    "content": "Your educational content here...",
-    "material_type": "both"
+# Generate flashcards from text
+response = requests.post("http://localhost:8000/generate-flashcards", data={
+    "prompt": "Your educational content here...",
+    "num_flashcards": 10
 })
 
 data = response.json()
 flashcards = data["flashcards"]
-quiz_questions = data["quiz_questions"]
-```
-
-## Example Usage
-
-### Creating Flashcards via API
-```bash
-curl -X POST "http://localhost:8000/generate" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "content": "Photosynthesis is the process by which plants convert light energy, carbon dioxide, and water into glucose and oxygen. This process occurs in chloroplasts and involves two main stages: the light-dependent reactions and the Calvin cycle.",
-       "material_type": "flashcards"
-     }'
-```
-
-### Creating Quizzes via API
-```bash
-curl -X POST "http://localhost:8000/generate" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "content": "World War II ended in 1945 with the surrender of Germany in May and Japan in August. The war involved over 30 countries and resulted in significant changes to the global political landscape.",
-       "material_type": "quiz"
-     }'
-```
-
-### Creating Both via API
-```bash
-curl -X POST "http://localhost:8000/generate" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "content": "Quadratic equations are polynomial equations of degree 2. They can be solved using the quadratic formula: x = (-b ± √(b²-4ac)) / 2a",
-       "material_type": "both"
-     }'
 ```
 
 ## Content Types Supported
@@ -265,43 +177,7 @@ curl -X POST "http://localhost:8000/generate" \
 1. **Provide Context**: Give enough content for meaningful study materials
 2. **Specify Preferences**: Choose the appropriate material type for your study goals
 3. **Review and Practice**: Use the generated materials actively for studying
-4. **Iterate**: Use session IDs to maintain context across multiple requests
-5. **Use Both Modes**: Combine flashcards for memorization and quizzes for testing
-
-## Deployment
-
-### Production Considerations
-
-1. **API Security**: 
-   - Configure CORS origins for production
-   - Add API authentication if needed
-   - Use environment variables for sensitive data
-
-2. **Performance**:
-   - Use a production ASGI server like Gunicorn with Uvicorn workers
-   - Implement rate limiting
-   - Add caching for frequently requested content
-
-3. **Monitoring**:
-   - Add logging and monitoring
-   - Implement health checks
-   - Track API usage and performance
-
-### Docker Deployment (Optional)
-
-Create a `Dockerfile`:
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY api_requirements.txt .
-RUN pip install -r api_requirements.txt
-
-COPY . .
-EXPOSE 8000
-
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+4. **Use Both Modes**: Combine flashcards for memorization and quizzes for testing
 
 ## Troubleshooting
 
