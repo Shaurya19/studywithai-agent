@@ -4,8 +4,9 @@ StudyWithAI API
 A simplified REST API for generating flashcards and quizzes from educational content.
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import io
@@ -38,6 +39,12 @@ if not google_api_key:
     logger.error("GOOGLE_API_KEY not found in environment variables")
     raise ValueError("GOOGLE_API_KEY is required")
 
+# Configure API security
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+if not API_SECRET_KEY:
+    logger.error("API_SECRET_KEY not found in environment variables")
+    raise ValueError("API_SECRET_KEY is required for API security")
+
 # Set the Google API key as environment variable for the SDK
 os.environ["GOOGLE_API_KEY"] = google_api_key
 logger.info("Google API key configured successfully")
@@ -57,6 +64,29 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# API Key validation middleware
+@app.middleware("http")
+async def validate_api_key(request: Request, call_next):
+    # Allow health check and root endpoint without API key
+    if request.url.path in ["/", "/health", "/docs", "/redoc", "/openapi.json"]:
+        response = await call_next(request)
+        return response
+    
+    # Check for API key in headers
+    api_key = request.headers.get("X-API-Key")
+    if not api_key or api_key != API_SECRET_KEY:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "success": False,
+                "message": "Invalid or missing API key",
+                "error": "Unauthorized access"
+            }
+        )
+    
+    response = await call_next(request)
+    return response
 
 # Add CORS middleware
 app.add_middleware(
