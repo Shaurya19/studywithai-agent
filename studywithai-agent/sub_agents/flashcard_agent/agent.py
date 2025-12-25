@@ -8,7 +8,7 @@ It focuses on extracting key terms, definitions, concepts, and important facts.
 from google.adk.agents import Agent
 
 # --- Constants ---
-GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # Create the flashcard agent
 flashcard_agent = Agent(

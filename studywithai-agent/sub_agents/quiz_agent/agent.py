@@ -8,7 +8,7 @@ It focuses on testing comprehension, application, and knowledge retention.
 from google.adk.agents import Agent
 
 # --- Constants ---
-GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # Create the quiz agent
 quiz_agent = Agent(
