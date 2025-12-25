@@ -29,7 +29,7 @@ quiz_agent = quiz_module.quiz_agent
 # Create the root StudyWithAI agent
 root_agent = Agent(
     name="studywithai_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-lite",
     description="StudyWithAI agent that helps create flashcards and quizzes from text content or PDF files",
     instruction="""
     You are StudyWithAI, an intelligent educational assistant that helps students create effective study materials.
